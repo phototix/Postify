@@ -313,15 +313,19 @@
             document.getElementById('imageLoading').style.display = 'block';
             document.getElementById('imageForm').style.opacity = '0.5';
             
-            // Make actual API call to api.php
-            const formData = new FormData();
-            formData.append('action', 'generateImage');
-            formData.append('prompt', prompt);
-            formData.append('style', style);
+            // Send JSON instead of FormData
+            const requestData = {
+                action: 'generateImage',
+                prompt: prompt,
+                style: style
+            };
             
             fetch('api.php', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
             })
             .then(response => response.json())
             .then(data => {
@@ -341,7 +345,7 @@
                 document.getElementById('imageForm').style.opacity = '1';
             });
         });
-        
+
         // Video generation form handling
         document.getElementById('videoForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -352,15 +356,19 @@
             document.getElementById('videoLoading').style.display = 'block';
             document.getElementById('videoForm').style.opacity = '0.5';
             
-            // Make actual API call to api.php
-            const formData = new FormData();
-            formData.append('action', 'generateVideo');
-            formData.append('prompt', prompt);
-            formData.append('duration', duration);
+            // Send JSON instead of FormData
+            const requestData = {
+                action: 'generateVideo',
+                prompt: prompt,
+                duration: duration
+            };
             
             fetch('api.php', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
             })
             .then(response => response.json())
             .then(data => {
@@ -380,7 +388,8 @@
                 document.getElementById('videoForm').style.opacity = '1';
             });
         });
-        
+
+
         // Regenerate buttons
         document.getElementById('regenerateImage').addEventListener('click', function() {
             document.getElementById('imageForm').dispatchEvent(new Event('submit'));
