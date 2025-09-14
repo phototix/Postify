@@ -330,9 +330,15 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Set the generated image URL
-                    document.getElementById('generatedImage').src = data.data.image_url;
-                    document.getElementById('imageResult').style.display = 'block';
+                    // UPDATED: Get image URL from new response format
+                    if (data.data && data.data.data && data.data.data[0] && data.data.data[0].imageURL) {
+                        const imageUrl = data.data.data[0].imageURL;
+                        document.getElementById('generatedImage').src = imageUrl;
+                        document.getElementById('imageResult').style.display = 'block';
+                    } else {
+                        alert('Error: Could not find image URL in response');
+                        console.log('API Response:', data);
+                    }
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -373,9 +379,20 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Set the generated video URL
-                    document.getElementById('generatedVideo').src = data.data.video_url;
-                    document.getElementById('videoResult').style.display = 'block';
+                    // UPDATED: Get video URL from new response format
+                    // Note: The video response format might be different - check the actual response
+                    if (data.data && data.data.data && data.data.data.videoURL) {
+                        const videoUrl = data.data.data.videoURL;
+                        document.getElementById('generatedVideo').src = videoUrl;
+                        document.getElementById('videoResult').style.display = 'block';
+                    } else if (data.data && data.data.data && data.data.data[0] && data.data.data[0].videoURL) {
+                        const videoUrl = data.data.data[0].videoURL;
+                        document.getElementById('generatedVideo').src = videoUrl;
+                        document.getElementById('videoResult').style.display = 'block';
+                    } else {
+                        alert('Error: Could not find video URL in response');
+                        console.log('API Response:', data);
+                    }
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -398,19 +415,23 @@
         document.getElementById('regenerateVideo').addEventListener('click', function() {
             document.getElementById('videoForm').dispatchEvent(new Event('submit'));
         });
-        
-        // Download buttons (placeholder functionality)
+
+        // Download buttons - UPDATED to use the correct URL
         document.getElementById('downloadImage').addEventListener('click', function() {
             const imageUrl = document.getElementById('generatedImage').src;
-            if (imageUrl) {
+            if (imageUrl && imageUrl !== window.location.href) {
                 window.open(imageUrl, '_blank');
+            } else {
+                alert('No image available to download');
             }
         });
 
         document.getElementById('downloadVideo').addEventListener('click', function() {
             const videoUrl = document.getElementById('generatedVideo').src;
-            if (videoUrl) {
+            if (videoUrl && videoUrl !== window.location.href) {
                 window.open(videoUrl, '_blank');
+            } else {
+                alert('No video available to download');
             }
         });
     </script>
