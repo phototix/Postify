@@ -5,7 +5,7 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Runware AI API configuration
-define('RUNWARE_API_KEY', 'SSE24g8y8wnZHB1M6lmMeDW7oFD08Qlr');
+define('RUNWARE_API_KEY', '');
 define('RUNWARE_IMAGE_API', 'https://api.runware.ai/v1/images/generate');
 define('RUNWARE_VIDEO_API', 'https://api.runware.ai/v1/videos/generate');
 
