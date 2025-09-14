@@ -313,16 +313,33 @@
             document.getElementById('imageLoading').style.display = 'block';
             document.getElementById('imageForm').style.opacity = '0.5';
             
-            // Simulate API call (in real implementation, this would call the PHP backend)
-            setTimeout(() => {
-                // Hide loading, show result
+            // Make actual API call to api.php
+            const formData = new FormData();
+            formData.append('action', 'generateImage');
+            formData.append('prompt', prompt);
+            formData.append('style', style);
+            
+            fetch('api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Set the generated image URL
+                    document.getElementById('generatedImage').src = data.data.image_url;
+                    document.getElementById('imageResult').style.display = 'block';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            })
+            .finally(() => {
                 document.getElementById('imageLoading').style.display = 'none';
                 document.getElementById('imageForm').style.opacity = '1';
-                document.getElementById('imageResult').style.display = 'block';
-                
-                // Set a placeholder image (in real implementation, this would be the generated image)
-                document.getElementById('generatedImage').src = 'https://via.placeholder.com/512/6f42c1/ffffff?text=AI+Generated+Image';
-            }, 2000);
+            });
         });
         
         // Video generation form handling
@@ -335,16 +352,33 @@
             document.getElementById('videoLoading').style.display = 'block';
             document.getElementById('videoForm').style.opacity = '0.5';
             
-            // Simulate API call (in real implementation, this would call the PHP backend)
-            setTimeout(() => {
-                // Hide loading, show result
+            // Make actual API call to api.php
+            const formData = new FormData();
+            formData.append('action', 'generateVideo');
+            formData.append('prompt', prompt);
+            formData.append('duration', duration);
+            
+            fetch('api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Set the generated video URL
+                    document.getElementById('generatedVideo').src = data.data.video_url;
+                    document.getElementById('videoResult').style.display = 'block';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            })
+            .finally(() => {
                 document.getElementById('videoLoading').style.display = 'none';
                 document.getElementById('videoForm').style.opacity = '1';
-                document.getElementById('videoResult').style.display = 'block';
-                
-                // Set a placeholder video (in real implementation, this would be the generated video)
-                document.getElementById('generatedVideo').src = 'https://www.w3schools.com/html/mov_bbb.mp4';
-            }, 3000);
+            });
         });
         
         // Regenerate buttons
@@ -358,11 +392,17 @@
         
         // Download buttons (placeholder functionality)
         document.getElementById('downloadImage').addEventListener('click', function() {
-            alert('In a real implementation, this would download the generated image.');
+            const imageUrl = document.getElementById('generatedImage').src;
+            if (imageUrl) {
+                window.open(imageUrl, '_blank');
+            }
         });
-        
+
         document.getElementById('downloadVideo').addEventListener('click', function() {
-            alert('In a real implementation, this would download the generated video.');
+            const videoUrl = document.getElementById('generatedVideo').src;
+            if (videoUrl) {
+                window.open(videoUrl, '_blank');
+            }
         });
     </script>
 </body>
