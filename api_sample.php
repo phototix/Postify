@@ -1,18 +1,45 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // Runware AI API configuration
-define('RUNWARE_API_KEY', '');
+define('RUNWARE_API_KEY', 'YOUR_API_KEY_HERE'); // Replace with actual API key
 define('RUNWARE_IMAGE_API', 'https://api.runware.ai/v1/images/generate');
 define('RUNWARE_VIDEO_API', 'https://api.runware.ai/v1/videos/generate');
 
+// Check if request method is POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'error' => 'Only POST requests are allowed']);
+    exit;
+}
+
+// Get JSON input
+$input = json_decode(file_get_contents('php://input'), true);
+
+if (!$input || !isset($input['action'])) {
+    echo json_encode(['success' => false, 'error' => 'Invalid request format']);
+    exit;
+}
+
+$action = $input['action'];
+
 // Handle image generation request
-if ($_POST['action'] == 'generateImage') {
-    $prompt = $_POST['prompt'];
-    $style = $_POST['style'];
+if ($action == 'generateImage') {
+    if (!isset($input['prompt']) || empty($input['prompt'])) {
+        echo json_encode(['success' => false, 'error' => 'Prompt is required']);
+        exit;
+    }
+    
+    $prompt = filter_var($input['prompt'], FILTER_SANITIZE_STRING);
+    $style = isset($input['style']) ? filter_var($input['style'], FILTER_SANITIZE_STRING) : 'realistic';
     
     // Prepare API request data
     $data = [
@@ -32,9 +59,14 @@ if ($_POST['action'] == 'generateImage') {
 }
 
 // Handle video generation request
-if ($_POST['action'] == 'generateVideo') {
-    $prompt = $_POST['prompt'];
-    $duration = $_POST['duration'];
+if ($action == 'generateVideo') {
+    if (!isset($input['prompt']) || empty($input['prompt'])) {
+        echo json_encode(['success' => false, 'error' => 'Prompt is required']);
+        exit;
+    }
+    
+    $prompt = filter_var($input['prompt'], FILTER_SANITIZE_STRING);
+    $duration = isset($input['duration']) ? (int)$input['duration'] : 5;
     
     // Prepare API request data
     $data = [
@@ -59,6 +91,7 @@ function callRunwareAPI($url, $data) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
     
     $headers = [
         'Content-Type: application/json',
@@ -86,4 +119,6 @@ function callRunwareAPI($url, $data) {
 }
 
 // If no valid action specified
-echo json_encode(['success' => false
+echo json_encode(['success' => false, 'error' => 'Invalid action specified']);
+exit;
+?>
