@@ -1,5 +1,5 @@
 <?php
-// api.php - Sole function handler for AI generation requests
+// api.php - Updated for new Runware API format
 
 // Include configuration
 require_once 'config.php';
@@ -23,8 +23,14 @@ function handleRequest() {
         return ['success' => false, 'error' => 'Only POST requests are allowed', 'code' => 405];
     }
 
-    // Get JSON input
-    $input = json_decode(file_get_contents('php://input'), true);
+    // Get input data
+    $contentType = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
+    
+    if (strpos($contentType, 'application/json') !== false) {
+        $input = json_decode(file_get_contents('php://input'), true);
+    } else {
+        $input = $_POST;
+    }
 
     if (!$input || !isset($input['action'])) {
         return ['success' => false, 'error' => 'Invalid request format', 'code' => 400];
@@ -43,7 +49,7 @@ function handleRequest() {
     }
 }
 
-// Image generation handler
+// Image generation handler - UPDATED FORMAT
 function handleImageGeneration($input) {
     // Validate input
     if (!isset($input['prompt']) || empty(trim($input['prompt']))) {
@@ -51,24 +57,32 @@ function handleImageGeneration($input) {
     }
 
     $prompt = filter_var(trim($input['prompt']), FILTER_SANITIZE_STRING);
-    $style = isset($input['style']) ? filter_var($input['style'], FILTER_SANITIZE_STRING) : DEFAULT_STYLE;
-    $width = isset($input['width']) ? min((int)$input['width'], MAX_IMAGE_SIZE) : MAX_IMAGE_SIZE;
-    $height = isset($input['height']) ? min((int)$input['height'], MAX_IMAGE_SIZE) : MAX_IMAGE_SIZE;
+    $model = isset($input['model']) ? filter_var($input['model'], FILTER_SANITIZE_STRING) : 'runware:101@1';
+    $width = isset($input['width']) ? (int)$input['width'] : 1024;
+    $height = isset($input['height']) ? (int)$input['height'] : 1024;
+    $steps = isset($input['steps']) ? (int)$input['steps'] : 30;
 
-    // Prepare API request data
+    // Generate unique task UUID
+    $taskUUID = generateUUID();
+
+    // Prepare API request data in NEW format
     $data = [
-        'prompt' => $prompt,
-        'style' => $style,
-        'width' => $width,
-        'height' => $height,
-        'num_images' => 1
+        [
+            "taskType" => "imageInference",
+            "taskUUID" => $taskUUID,
+            "model" => $model,
+            "positivePrompt" => $prompt,
+            "width" => $width,
+            "height" => $height,
+            "steps" => $steps
+        ]
     ];
 
     // Call Runware AI API
-    return callRunwareAPI(RUNWARE_IMAGE_API, $data);
+    return callRunwareAPI('https://api.runware.ai/v1', $data);
 }
 
-// Video generation handler
+// Video generation handler - UPDATED FORMAT
 function handleVideoGeneration($input) {
     // Validate input
     if (!isset($input['prompt']) || empty(trim($input['prompt']))) {
@@ -76,17 +90,42 @@ function handleVideoGeneration($input) {
     }
 
     $prompt = filter_var(trim($input['prompt']), FILTER_SANITIZE_STRING);
-    $duration = isset($input['duration']) ? min((int)$input['duration'], MAX_VIDEO_DURATION) : 5;
+    $model = isset($input['model']) ? filter_var($input['model'], FILTER_SANITIZE_STRING) : 'klingai:5@3';
+    $duration = isset($input['duration']) ? (int)$input['duration'] : 10;
+    $width = isset($input['width']) ? (int)$input['width'] : 1920;
+    $height = isset($input['height']) ? (int)$input['height'] : 1080;
+    $seed = isset($input['seed']) ? (int)$input['seed'] : rand(1, 1000);
+    $numberResults = isset($input['numberResults']) ? (int)$input['numberResults'] : 1;
 
-    // Prepare API request data
+    // Generate unique task UUID
+    $taskUUID = generateUUID();
+
+    // Prepare API request data in NEW format
     $data = [
-        'prompt' => $prompt,
-        'duration' => $duration,
-        'resolution' => '512x512'
+        "taskType" => "videoInference",
+        "taskUUID" => $taskUUID,
+        "positivePrompt" => $prompt,
+        "model" => $model,
+        "duration" => $duration,
+        "width" => $width,
+        "height" => $height,
+        "seed" => $seed,
+        "numberResults" => $numberResults
     ];
 
     // Call Runware AI API
-    return callRunwareAPI(RUNWARE_VIDEO_API, $data);
+    return callRunwareAPI('https://api.runware.ai/v1', $data);
+}
+
+// Generate UUID function
+function generateUUID() {
+    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
 }
 
 // Function to call Runware AI API
@@ -102,7 +141,7 @@ function callRunwareAPI($url, $data) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_TIMEOUT, 120); // Increased timeout for video generation
+    curl_setopt($ch, CURLOPT_TIMEOUT, 120);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     
     $headers = [
